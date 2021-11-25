@@ -10,10 +10,10 @@ import { JwtService } from '@nestjs/jwt';
 export class AuthService {
   constructor(
     @InjectModel('User') private userModel: Model<User>,
-    private jwtService: JwtService
-    ) {}
+    private jwtService: JwtService,
+  ) {}
 
-  async signUp(authCredentialsDto: AuthCredentialsDto): Promise<void> {
+  async signUp(authCredentialsDto: AuthCredentialsDto): Promise<any> {
     const { username, password } = authCredentialsDto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -22,7 +22,7 @@ export class AuthService {
 
     try {
       await user.save();
-      console.log('user save',user);
+      return this.signIn(user);
     } catch (error) {
       if (error.code === 11000) {
         console.error('error, not saved');
@@ -33,22 +33,22 @@ export class AuthService {
   }
 
   async signIn(user: User) {
-    const payload = { username: user.username, sub:user._id };
+    const payload = { username: user.username, sub: user._id };
     return {
       accessToken: this.jwtService.sign(payload),
     };
   }
 
-  async validateUser(username: string, pass: string):Promise<User> {
+  async validateUser(username: string, pass: string): Promise<User> {
     const user = await this.userModel.findOne({ username });
 
-    if(!user) {
+    if (!user) {
       return null;
     }
 
     const valid = await bcrypt.compare(pass, user.password);
 
-    if(valid) {
+    if (valid) {
       return user;
     }
 
